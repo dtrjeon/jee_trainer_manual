@@ -1,5 +1,5 @@
 // JEE 62기 매뉴얼 서비스워커 — 앱 파일은 캐시(오프라인), 구글시트(Q&A) 통신은 항상 네트워크
-const CACHE = 'jee62-manual-v1';
+const CACHE = 'jee62-manual-v2';
 const SHELL = ['./', './JEE_62_check.html', './manifest.json', './icon-192.png', './icon-512.png', './apple-touch-icon.png'];
 
 self.addEventListener('install', e=>{
