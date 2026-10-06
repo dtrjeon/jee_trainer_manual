@@ -1,0 +1,17 @@
+{
+  "name": "JEE 훈련자 매뉴얼 62기",
+  "short_name": "JEE 매뉴얼",
+  "description": "전도폭발훈련 62기 훈련자(2) 매뉴얼",
+  "start_url": "./JEE_62_check.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#ffffff",
+  "theme_color": "#2C5282",
+  "lang": "ko",
+  "icons": [
+    {"src": "icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any"},
+    {"src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any"},
+    {"src": "icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable"}
+  ]
+}
