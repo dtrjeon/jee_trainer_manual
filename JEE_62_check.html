@@ -200,6 +200,7 @@
   }
   .theme-swatch[data-theme="navy"]{ --sw1:#E3EBF4; --sw2:#1A2F4E; }
   .theme-swatch[data-theme="purple"]{ --sw1:#EAE8F2; --sw2:#7C5CFC; }
+  .theme-swatch[data-theme="sodalite"]{ --sw1:#1E2B57; --sw2:#D9C2A3; }
   .theme-swatch[data-theme="dark"]{ --sw1:#0A0A0F; --sw2:#8B5CF6; }
   .theme-swatch.active{
     border-color: var(--amber-soft);
@@ -469,6 +470,19 @@
   @media (min-width:700px){
     .home-btn{ right: calc(50% - 340px); bottom:28px; }
   }
+
+  /* ---------- Skin: 소달라이트 (Pantone 19-3953 TCX + 6Y01 SP) ---------- */
+  body[data-theme="sodalite"] .header-icon{ background:#FBF7F1; border-radius:50%; padding:3px; width:36px; height:36px; box-shadow:0 0 0 1px rgba(217,194,163,.6); }
+  body[data-theme="sodalite"]{
+    --chrome-bg-1:#2A3A70; --chrome-bg-2:#1E2B57; --chrome-bg-3:#141D3F; --chrome-deep-rgb:20,29,63;
+    --amber:#A98A66; --amber-soft:#D9C2A3; --sage:#3C5499; --sage-soft:#E6E9F3; --clay:#8A6445;
+    --chrome-sub:#E3D5C2; --chrome-mute:#B9A58C; --chrome-track:#34447D; --chrome-track-deep:#26335F;
+    --chrome-panel-bg:rgba(217,194,163,0.08); --chrome-panel-border:rgba(217,194,163,0.28);
+    --paper:#FBF7F1; --paper-line:#E6D9C8; --ink:#1E2438; --ink-soft:#6B615B; --chrome-text:#F6EFE3;
+    --box-bg:#F3EADD; --box-bg-alt:#F8F1E7; --box-text:#263669;
+    --bubble1-bg:#EFE3D2; --bubble1-text:#33291F; --bubble2-bg:#DDE3F2; --bubble2-text:#1C2A57;
+    --check-bg:#FFFFFF; --cal-border:#E3D6CA; --cal-prerow-bg:#FBF8F5; --cal-header-bg:#263669; --cal-header-text:#FFFFFF;
+  }
 </style>
 </head>
 <body>
@@ -484,6 +498,7 @@
         <button class="theme-swatch" data-theme="navy" title="네이비"></button>
         <button class="theme-swatch" data-theme="purple" title="퍼플"></button>
         <button class="theme-swatch" data-theme="dark" title="다크"></button>
+        <button class="theme-swatch" data-theme="sodalite" title="소달라이트"></button>
       </div>
       <div class="font-picker">
         <button class="font-btn" id="fontMinus" aria-label="글씨 작게">가-</button>
