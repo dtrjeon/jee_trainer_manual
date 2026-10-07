@@ -442,6 +442,18 @@
   .qna-att{ margin-top:8px; } .qna-img{ width:100%; max-height:420px; object-fit:contain; border-radius:8px; border:1px solid var(--paper-line); background:#fff; cursor:zoom-in; display:block; }
   .qna-dl,.qna-file{ display:inline-block; margin-top:6px; font-size:12.5px; color:var(--clay); text-decoration:underline; }
   .qna-file span{ margin-left:4px; font-size:11px; }
+  .qna-admin-row{ text-align:right; margin:6px 0 0; }
+  .qna-lock{ border:1px solid var(--paper-line); background:var(--box-bg); color:var(--ink-soft); border-radius:20px; padding:4px 12px; font-size:12px; cursor:pointer; }
+  .qna-admin{ display:flex; gap:8px; align-items:center; background:var(--box-bg); border:1px solid var(--paper-line); border-radius:10px; padding:8px 10px; margin:8px 0; font-size:calc(12.5px * var(--font-scale)); }
+  .qna-admin.on{ background:#E6E9F3; color:#1C2A57; justify-content:space-between; }
+  .qna-admin input{ flex:1; min-width:0; border:1px solid var(--paper-line); border-radius:8px; padding:8px 10px; font-size:16px; background:var(--paper,#fff); color:var(--ink); }
+  .qna-admin button{ border:none; border-radius:8px; padding:8px 12px; background:var(--navy,#1f2a44); color:#fff; font-weight:700; cursor:pointer; white-space:nowrap; }
+  .qna-actions{ display:flex; gap:6px; justify-content:flex-end; margin-top:6px; }
+  .qna-mini{ border:1px solid var(--paper-line); background:var(--paper,#fff); color:var(--ink); border-radius:8px; padding:5px 10px; font-size:12px; cursor:pointer; }
+  .qna-mini.danger{ color:#B3402A; border-color:#E5B9AF; } .qna-mini.primary{ background:var(--navy,#1f2a44); color:#fff; border-color:transparent; }
+  .qna-editbox{ flex:1; min-width:0; } .qna-editbox textarea{ width:100%; box-sizing:border-box; border:1px solid var(--paper-line); border-radius:8px; padding:9px 10px; font:inherit; font-size:16px; background:var(--paper,#fff); color:var(--ink); }
+  .qna-mine{ margin-left:6px; padding:1px 7px; border-radius:20px; background:#EFE3D2; color:#6B4A2E; font-size:10.5px; }
+  .qna-toggle.ans{ margin-top:8px; background:var(--paper,#fff); font-weight:700; }
   .dl-btn{ display:block; width:100%; margin-top:8px; padding:11px; border:none; border-radius:10px;
     background:var(--navy,#1f2a44); color:#fff; font-family:'Noto Sans KR',sans-serif; font-size:calc(13px * var(--font-scale)); cursor:pointer; }
   .dl-btn.dl-all{ background:transparent; color:var(--ink,#333); border:1px solid var(--paper-line); margin-top:14px; }
@@ -895,25 +907,35 @@ function checkIcon(){
   return '<svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>';
 }
 
-/* ================= Q&A 등록 (문의자/답신자) ================= */
-// ▼ 구글 Apps Script 웹앱 URL(배포 후 입력). 비워두면 이 기기에서만 저장되는 '로컬 모드'로 동작합니다.
+/* ================= Q&A 등록 (익명 표시 / 관리자 / 본인 수정 / 답변 접기·펼치기) ================= */
+// ▼ 구글 Apps Script 웹앱 URL. 비워두면 이 기기에서만 저장되는 '로컬 모드'로 동작합니다.
 const QNA_GAS_URL = 'https://script.google.com/macros/s/AKfycbzCShp2cSvxJVTNpLmm23qhamLM5BBfGJ_L2GZVWmUh9BdYowO_VYEABYFqXiRwmJ-ryg/exec';
 const QNA_LOCAL_KEY = 'jee62-qna-local';
 const QNA_NAME_KEY = 'jee62-qna-name';
+const QNA_PHONE_KEY = 'jee62-qna-phone';
+const QNA_TOKENS_KEY = 'jee62-qna-tokens';
+const QNA_ADMIN_SKEY = 'jee62-qna-admin';
+const QNA_LOCAL_ADMIN = 'admin';   // 로컬 모드(시험용) 관리자 비밀번호
+const QNA_NOTICE = '※ 문의 내용에 따라 삭제될 수 있습니다.<br>※ 경우에 따라 답변이 늦을 수 있습니다.<br>※ 문의·답변은 익명으로 표시되며, 성명·연락처는 관리자만 확인합니다.<br>※ 본인이 쓴 글은 등록한 기기에서만 수정할 수 있습니다.';
+
 let qnaItems = [], qnaLoaded = false, qnaLoading = false, qnaErr = '';
-let qnaDrafts = {};          // {ask:{name,text}, <qid>:{name,text}}
-let qnaFiles = {};           // {ask:{name,mime,dataUrl}, <qid>:...}
-let qnaAnswerOpen = new Set();
-let qnaBusy = false;
+let qnaDrafts = {}, qnaFiles = {};
+let qnaFormOpen = new Set(), qnaAnsOpen = new Set();
+let qnaEdit = null;        // {kind:'q'|'a', id, text}
+let qnaConfirm = null;     // 삭제 확인 중인 글 id
+let qnaBusy = false, qnaAdmin = false, qnaAdminPanel = false;
+let qnaAdminKey = (()=>{ try{ return sessionStorage.getItem(QNA_ADMIN_SKEY)||''; }catch(e){ return ''; } })();
 
 function escHtml(t){ return String(t==null?'':t).replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
 function nl2br(t){ return escHtml(t).replace(/\n/g,'<br>'); }
 function fmtDate(iso){ try{ const d=new Date(iso); const p=n=>String(n).padStart(2,'0'); return `${d.getFullYear()}.${p(d.getMonth()+1)}.${p(d.getDate())}`; }catch(e){ return ''; } }
 function fmtPhone(t){ const d=String(t||'').replace(/\D/g,''); if(d.length===11) return d.replace(/(\d{3})(\d{4})(\d{4})/,'$1-$2-$3'); if(d.length===10) return d.replace(/(\d{3})(\d{3})(\d{4})/,'$1-$2-$3'); return String(t||''); }
-function savedPhone(){ try{ return localStorage.getItem('jee62-qna-phone')||''; }catch(e){ return ''; } }
-const QNA_NOTICE = '※ 문의 내용에 따라 삭제될 수 있습니다.<br>※ 경우에 따라 답변이 늦을 수 있습니다.';
-function savedName(){ try{ return localStorage.getItem(QNA_NAME_KEY)||''; }catch(e){ return ''; } }
-function saveName(n){ try{ localStorage.setItem(QNA_NAME_KEY,n); }catch(e){} }
+function lsGet(k){ try{ return localStorage.getItem(k)||''; }catch(e){ return ''; } }
+function lsSet(k,v){ try{ localStorage.setItem(k,v); }catch(e){} }
+function savedName(){ return lsGet(QNA_NAME_KEY); }
+function savedPhone(){ return lsGet(QNA_PHONE_KEY); }
+function qnaTokens(){ try{ return JSON.parse(lsGet(QNA_TOKENS_KEY)||'{}'); }catch(e){ return {}; } }
+function qnaSaveToken(id,tok){ if(!id||!tok) return; const t=qnaTokens(); t[id]=tok; lsSet(QNA_TOKENS_KEY, JSON.stringify(t)); }
 
 function readFileAsDataUrl(file){
   return new Promise((res,rej)=>{ const r=new FileReader(); r.onload=()=>res(r.result); r.onerror=rej; r.readAsDataURL(file); });
@@ -933,28 +955,55 @@ async function prepareFile(file){
   return {name:file.name, mime:file.type||'application/octet-stream', dataUrl: await readFileAsDataUrl(file)};
 }
 
-/* ---- 저장소: GAS 또는 로컬 ---- */
-function loadLocal(){ try{ return JSON.parse(localStorage.getItem(QNA_LOCAL_KEY)||'[]'); }catch(e){ return []; } }
+/* ---- 로컬 모드 (GAS 미연결 시 이 기기에만 저장) ---- */
+function loadLocal(){ try{ return JSON.parse(lsGet(QNA_LOCAL_KEY)||'[]'); }catch(e){ return []; } }
 function saveLocal(list){ try{ localStorage.setItem(QNA_LOCAL_KEY, JSON.stringify(list)); }catch(e){ throw new Error('저장 공간이 부족합니다. 이미지를 줄이거나 구글시트 연결을 사용하세요.'); } }
-async function gasPost(body){
-  const r = await fetch(QNA_GAS_URL,{method:'POST', headers:{'Content-Type':'text/plain;charset=utf-8'}, body:JSON.stringify(body)});
-  const j = await r.json(); if(!j.ok) throw new Error(j.error||'저장 실패'); return j;
+function localList(key){
+  const admin = key===QNA_LOCAL_ADMIN;
+  const items = loadLocal().map(q=>{
+    const o={id:q.id,createdAt:q.createdAt,text:q.text,file:q.file,edited:!!q.edited,
+      answers:q.answers.map(a=>{ const x={id:a.id,createdAt:a.createdAt,text:a.text,file:a.file,edited:!!a.edited}; if(admin) x.name=a.name; return x; })};
+    if(admin){ o.name=q.name; o.phone=q.phone; } return o;
+  });
+  return {ok:true, admin, adminError:!!key&&!admin, items};
 }
-async function qnaFetchAll(){
-  if(!QNA_GAS_URL) return loadLocal();
-  const r = await fetch(QNA_GAS_URL+'?action=list'); const j = await r.json();
-  if(!j.ok) throw new Error(j.error||'불러오기 실패'); return j.items;
-}
-async function qnaAdd(kind, qid, name, text, file, phone){
-  const now = new Date().toISOString();
-  if(!QNA_GAS_URL){
-    const list = loadLocal();
-    const f = file ? {name:file.name, mime:file.mime, url:file.dataUrl} : null;
-    if(kind==='ask') list.unshift({id:'q'+Date.now(), createdAt:now, name, phone, text, file:f, answers:[]});
-    else { const q = list.find(x=>x.id===qid); if(q) q.answers.push({id:'a'+Date.now(), createdAt:now, name, text, file:f}); }
-    saveLocal(list); return;
+function localPost(d){
+  const list = loadLocal(), admin = d.adminKey===QNA_LOCAL_ADMIN, now = new Date().toISOString();
+  const f = d.file ? {name:d.file.name, mime:d.file.mime, url:'data:'+d.file.mime+';base64,'+d.file.data} : null;
+  const tok = 'tok'+Date.now()+Math.random().toString(36).slice(2,8);
+  if(d.action==='addQuestion'){ const id='q'+Date.now(); list.unshift({id,createdAt:now,name:d.name,phone:d.phone,text:d.text,file:f,token:tok,answers:[]}); saveLocal(list); return {ok:true,id,token:tok}; }
+  if(d.action==='addAnswer'){ const q=list.find(x=>x.id===d.qid); if(!q) throw new Error('문의를 찾을 수 없습니다.'); const id='a'+Date.now(); q.answers.push({id,createdAt:now,name:d.name,text:d.text,file:f,token:tok}); saveLocal(list); return {ok:true,id,token:tok}; }
+  let q=null,a=null; for(const x of list){ if(x.id===d.id){q=x;break;} const y=x.answers.find(z=>z.id===d.id); if(y){a=y;q=x;break;} }
+  const target = a||q; if(!target) throw new Error('글을 찾을 수 없습니다.');
+  if(d.action==='editQuestion'||d.action==='editAnswer'){
+    if(!admin && !(d.token && d.token===target.token)) throw new Error('수정 권한이 없습니다. (등록한 기기에서만 수정할 수 있습니다)');
+    const t=String(d.text||'').trim(); if(!t && !target.file) throw new Error('내용이 필요합니다.');
+    target.text=t; target.edited=true; saveLocal(list); return {ok:true};
   }
-  await gasPost({action: kind==='ask'?'addQuestion':'addAnswer', qid, name, phone, text, file: file?{name:file.name,mime:file.mime,data:file.dataUrl.split(',')[1]}:null});
+  if(d.action==='deleteQuestion'||d.action==='deleteAnswer'){
+    if(!admin) throw new Error('관리자만 삭제할 수 있습니다.');
+    if(a) q.answers=q.answers.filter(z=>z.id!==a.id); else list.splice(list.indexOf(q),1);
+    saveLocal(list); return {ok:true};
+  }
+  throw new Error('알 수 없는 요청');
+}
+
+/* ---- 서버 통신 ---- */
+async function qnaList(){
+  if(!QNA_GAS_URL) return localList(qnaAdminKey);
+  const r = await fetch(QNA_GAS_URL+'?action=list&admin='+encodeURIComponent(qnaAdminKey||'')+'&t='+Date.now());
+  const j = await r.json(); if(!j.ok) throw new Error(j.error||'불러오기 실패'); return j;
+}
+async function qnaCall(body){
+  body.adminKey = qnaAdminKey||'';
+  if(!QNA_GAS_URL) return localPost(body);
+  const r = await fetch(QNA_GAS_URL,{method:'POST', headers:{'Content-Type':'text/plain;charset=utf-8'}, body:JSON.stringify(body)});
+  const j = await r.json(); if(!j.ok) throw new Error(j.error||'요청 실패'); return j;
+}
+async function qnaReload(){
+  const j = await qnaList();
+  qnaItems = j.items; qnaAdmin = !!j.admin;
+  if(j.adminError){ qnaAdminKey=''; try{ sessionStorage.removeItem(QNA_ADMIN_SKEY); }catch(e){} qnaErr='관리자 비밀번호가 올바르지 않습니다.'; }
 }
 
 /* ---- 화면 ---- */
@@ -970,84 +1019,157 @@ function qnaFileHtml(f){
 function qnaFormHtml(key, label){
   const d = qnaDrafts[key]||{}; const nm = d.name!==undefined ? d.name : savedName();
   const f = qnaFiles[key];
-  return `<div class="qna-form" data-key="${key}">
-    <input class="qna-name" type="text" maxlength="30" placeholder="성명" value="${escHtml(nm)}">
-    ${key==='ask'?`<input class="qna-phone" type="tel" inputmode="tel" maxlength="20" placeholder="전화번호 (예: 010-1234-5678)" value="${escHtml(d.phone!==undefined?d.phone:savedPhone())}">`:''}
+  return `<div class="qna-form" data-key="${escHtml(key)}">
+    <input class="qna-name" type="text" maxlength="30" placeholder="성명 (화면에는 익명으로 표시)" value="${escHtml(nm)}">
+    ${key==='ask'?`<input class="qna-phone" type="tel" inputmode="tel" maxlength="20" placeholder="전화번호 (관리자만 확인)" value="${escHtml(d.phone!==undefined?d.phone:savedPhone())}">`:''}
     <textarea class="qna-text" rows="3" maxlength="3000" placeholder="${label} 내용 (글, 또는 이미지·자료만 올려도 됩니다)">${escHtml(d.text||'')}</textarea>
     <div class="qna-filerow">
       <label class="qna-pick">📷 이미지·자료 첨부<input class="qna-file-in" type="file" accept="image/*,.pdf,.doc,.docx,.hwp,.ppt,.pptx,.xls,.xlsx,.txt" hidden></label>
-      <span class="qna-picked">${f?escHtml(f.name):''}</span>${f?'<button class="qna-clear" type="button">✕</button>':''}
+      <span class="qna-picked">${f?escHtml(f.name):''}</span>${f?'<button class="qna-clear" type="button" data-qa="clearfile">✕</button>':''}
     </div>
     ${f&&f.mime.startsWith('image/')?`<img class="qna-preview" src="${f.dataUrl}" alt="">`:''}
-    <button class="qna-submit" type="button">${label} 등록</button>
+    <button class="qna-submit" type="button" data-qa="submit">${label} 등록</button>
   </div>`;
+}
+function qnaWho(x){
+  if(!qnaAdmin) return '<b>익명</b>';
+  return `<b>${escHtml(x.name||'')}</b>${x.phone?` · 📞 ${escHtml(x.phone)}`:''}`;
+}
+function qnaActions(kind, x){
+  const mine = !!qnaTokens()[x.id];
+  let h='';
+  if(mine||qnaAdmin) h += `<button class="qna-mini" type="button" data-qa="edit" data-kind="${kind}" data-id="${escHtml(x.id)}">✏ 수정</button>`;
+  if(qnaAdmin) h += `<button class="qna-mini danger" type="button" data-qa="del" data-kind="${kind}" data-id="${escHtml(x.id)}">${qnaConfirm===x.id?'정말 삭제?':'🗑 삭제'}</button>`;
+  return h ? `<div class="qna-actions">${h}</div>` : '';
+}
+function qnaBodyHtml(kind, x, mark){
+  if(qnaEdit && qnaEdit.id===x.id){
+    return `<div class="qna-body"><span class="${mark==='Q'?'qna-q':'qna-a'}">${mark}</span><div class="qna-editbox">
+      <textarea class="qna-edit-text" rows="4" maxlength="3000">${escHtml(qnaEdit.text)}</textarea>
+      <div class="qna-actions"><button class="qna-mini primary" type="button" data-qa="editsave">저장</button><button class="qna-mini" type="button" data-qa="editcancel">취소</button></div></div></div>`;
+  }
+  return `<div class="qna-body"><span class="${mark==='Q'?'qna-q':'qna-a'}">${mark}</span><div>${nl2br(x.text)}${qnaFileHtml(x.file)}</div></div>${qnaActions(kind,x)}`;
+}
+function qnaItemHtml(q){
+  const n = q.answers.length, open = qnaAnsOpen.has(q.id);
+  const mineTag = qnaTokens()[q.id] ? '<span class="qna-mine">내 글</span>' : '';
+  let h = `<div class="qna-card" data-qid="${escHtml(q.id)}">
+    <div class="qna-meta">${qnaWho(q)} · ${fmtDate(q.createdAt)}${q.edited?' · 수정됨':''}${mineTag}<span class="qna-badge ${n?'ok':''}">${n?`답변 ${n}`:'답변 대기'}</span></div>
+    ${qnaBodyHtml('q', q, 'Q')}`;
+  if(n){
+    h += `<button class="qna-toggle ans" type="button" data-qa="anstoggle" data-id="${escHtml(q.id)}">답변 ${n}개 ${open?'접기 ▲':'보기 ▼'}</button>`;
+    if(open){
+      q.answers.forEach(a=>{
+        h += `<div class="qna-ans"><div class="qna-meta">${qnaWho(a)} · ${fmtDate(a.createdAt)}${a.edited?' · 수정됨':''}${qnaTokens()[a.id]?'<span class="qna-mine">내 글</span>':''}</div>${qnaBodyHtml('a', a, 'A')}</div>`;
+      });
+    }
+  }
+  const fo = qnaFormOpen.has(q.id);
+  h += `<button class="qna-toggle" type="button" data-qa="formtoggle" data-id="${escHtml(q.id)}">${fo?'답변 작성 닫기':'💬 답변 달기'}</button>`;
+  if(fo) h += qnaFormHtml(q.id,'답변');
+  return h + `</div>`;
 }
 function renderQna(){
   const box = document.getElementById('qnaBox'); if(!box) return;
-  let h = QNA_GAS_URL ? '' : `<div class="qna-warn">⚠ 구글시트가 아직 연결되지 않아 <b>이 기기에서만</b> 보이고 저장됩니다. 모두가 함께 보려면 구글시트(Apps Script) 연결이 필요합니다.</div>`;
+  let h = QNA_GAS_URL ? '' : `<div class="qna-warn">⚠ 구글시트가 아직 연결되지 않아 <b>이 기기에서만</b> 보이고 저장됩니다. (시험용 관리자 비밀번호: ${QNA_LOCAL_ADMIN})</div>`;
   if(qnaErr) h += `<div class="qna-warn">${escHtml(qnaErr)}</div>`;
+  if(qnaAdmin){
+    h += `<div class="qna-admin on">🔑 관리자 모드 · 성명·연락처 열람, 모든 글 수정·삭제 가능<button type="button" data-qa="adminout">로그아웃</button></div>`;
+  } else {
+    h += `<div class="qna-admin-row"><button class="qna-lock" type="button" data-qa="adminpanel">🔒 관리자</button></div>`;
+    if(qnaAdminPanel) h += `<div class="qna-admin"><input id="qna-adminkey" type="password" placeholder="관리자 비밀번호" autocomplete="off"><button type="button" data-qa="adminlogin">로그인</button></div>`;
+  }
   if(qnaLoading && !qnaLoaded) h += `<p class="para">불러오는 중…</p>`;
   h += `<div class="divider-label">등록된 문의 ${qnaItems.length}건</div><p class="qna-notice">${QNA_NOTICE}</p>`;
-  qnaItems.forEach(q=>{
-    const open = qnaAnswerOpen.has(q.id);
-    h += `<div class="qna-card" data-qid="${escHtml(q.id)}">
-      <div class="qna-meta"><b>${escHtml(q.name)}</b>${q.phone?` · 📞 ${escHtml(q.phone)}`:''} · ${fmtDate(q.createdAt)}<span class="qna-badge ${q.answers.length?'ok':''}">${q.answers.length?`답변 ${q.answers.length}`:'답변 대기'}</span></div>
-      <div class="qna-body"><span class="qna-q">Q</span><div>${nl2br(q.text)}${qnaFileHtml(q.file)}</div></div>`;
-    q.answers.forEach(a=>{
-      h += `<div class="qna-ans"><div class="qna-meta"><b>${escHtml(a.name)}</b> · ${fmtDate(a.createdAt)}</div>
-        <div class="qna-body"><span class="qna-a">A</span><div>${nl2br(a.text)}${qnaFileHtml(a.file)}</div></div></div>`;
-    });
-    h += `<button class="qna-toggle" type="button" data-toggle-ans="${escHtml(q.id)}">${open?'답변 작성 닫기':'💬 답변 달기'}</button>`;
-    if(open) h += qnaFormHtml(q.id,'답변');
-    h += `</div>`;
-  });
-  h += `<div class="divider-label">❓ 새 문의 등록</div>`;
-  h += `<div class="qna-card"><div class="qna-title">❓ 문의하기</div>${qnaFormHtml('ask','문의')}<p class="qna-notice">${QNA_NOTICE}</p></div>`;
+  qnaItems.forEach(q=>{ h += qnaItemHtml(q); });
+  h += `<div class="divider-label">❓ 새 문의 등록</div><div class="qna-card"><div class="qna-title">❓ 문의하기</div>${qnaFormHtml('ask','문의')}<p class="qna-notice">${QNA_NOTICE}</p></div>`;
   box.innerHTML = h;
   box.querySelectorAll('.qna-img').forEach(img=> img.addEventListener('click',()=>{
     document.getElementById('lightboxImg').src = img.src; document.getElementById('lightbox').classList.add('show');
   }));
-  box.querySelectorAll('[data-toggle-ans]').forEach(b=> b.addEventListener('click',()=>{
-    const id=b.dataset.toggleAns; qnaAnswerOpen.has(id)?qnaAnswerOpen.delete(id):qnaAnswerOpen.add(id); renderQna();
-  }));
-  box.querySelectorAll('.qna-form').forEach(form=>{
-    const key = form.dataset.key; qnaDrafts[key] = qnaDrafts[key]||{};
-    form.querySelector('.qna-name').addEventListener('input',e=>{ qnaDrafts[key].name=e.target.value; });
-    form.querySelector('.qna-text').addEventListener('input',e=>{ qnaDrafts[key].text=e.target.value; });
-    const ph = form.querySelector('.qna-phone'); if(ph) ph.addEventListener('input',e=>{ qnaDrafts[key].phone=e.target.value; });
-    form.querySelector('.qna-file-in').addEventListener('change', async e=>{
-      const f = e.target.files[0]; if(!f) return;
-      try{ qnaFiles[key] = await prepareFile(f); qnaErr=''; }catch(err){ qnaErr = err.message; }
-      renderQna();
-    });
-    const clr = form.querySelector('.qna-clear'); if(clr) clr.addEventListener('click',()=>{ delete qnaFiles[key]; renderQna(); });
-    form.querySelector('.qna-submit').addEventListener('click', ()=> qnaSubmit(key, form));
-  });
+  box.onclick = qnaClick;
+  box.oninput = (e)=>{
+    const t=e.target, form=t.closest('.qna-form');
+    if(t.classList.contains('qna-edit-text')){ if(qnaEdit) qnaEdit.text=t.value; return; }
+    if(!form) return;
+    const key=form.dataset.key; qnaDrafts[key]=qnaDrafts[key]||{};
+    if(t.classList.contains('qna-name')) qnaDrafts[key].name=t.value;
+    else if(t.classList.contains('qna-phone')) qnaDrafts[key].phone=t.value;
+    else if(t.classList.contains('qna-text')) qnaDrafts[key].text=t.value;
+  };
+  box.onchange = async (e)=>{
+    const t=e.target; if(!t.classList.contains('qna-file-in')) return;
+    const key=t.closest('.qna-form').dataset.key, f=t.files[0]; if(!f) return;
+    try{ qnaFiles[key] = await prepareFile(f); qnaErr=''; }catch(err){ qnaErr = err.message; }
+    renderQna();
+  };
 }
-async function qnaSubmit(key, form){
-  if(qnaBusy) return;
+async function qnaRun(fn){
+  if(qnaBusy) return; qnaBusy = true;
+  qnaErr = '';
+  try{ await fn(); await qnaReload(); }catch(err){ qnaErr = '실패: '+err.message; }
+  qnaBusy = false; renderQna();
+}
+async function qnaClick(e){
+  const b = e.target.closest('[data-qa]'); if(!b) return;
+  const act = b.dataset.qa, id = b.dataset.id, kind = b.dataset.kind;
+  if(act!=='del') qnaConfirm = null;
+  if(act==='adminpanel'){ qnaAdminPanel = !qnaAdminPanel; return renderQna(); }
+  if(act==='adminlogin'){
+    const k = (document.getElementById('qna-adminkey')||{}).value||''; if(!k.trim()){ qnaErr='비밀번호를 입력하세요.'; return renderQna(); }
+    qnaAdminKey = k.trim();
+    return qnaRun(async()=>{ await qnaReload(); if(qnaAdmin){ try{ sessionStorage.setItem(QNA_ADMIN_SKEY,qnaAdminKey); }catch(e){} qnaAdminPanel=false; } });
+  }
+  if(act==='adminout'){ qnaAdminKey=''; qnaAdmin=false; qnaEdit=null; try{ sessionStorage.removeItem(QNA_ADMIN_SKEY); }catch(e){} return qnaRun(async()=>{}); }
+  if(act==='anstoggle'){ qnaAnsOpen.has(id)?qnaAnsOpen.delete(id):qnaAnsOpen.add(id); return renderQna(); }
+  if(act==='formtoggle'){ qnaFormOpen.has(id)?qnaFormOpen.delete(id):qnaFormOpen.add(id); return renderQna(); }
+  if(act==='clearfile'){ delete qnaFiles[b.closest('.qna-form').dataset.key]; return renderQna(); }
+  if(act==='edit'){
+    const all = []; qnaItems.forEach(q=>{ all.push(q); q.answers.forEach(a=>all.push(a)); });
+    const x = all.find(v=>v.id===id); if(!x) return;
+    qnaEdit = {kind, id, text:x.text}; return renderQna();
+  }
+  if(act==='editcancel'){ qnaEdit=null; return renderQna(); }
+  if(act==='editsave'){
+    const ed = qnaEdit; if(!ed) return;
+    const all = []; qnaItems.forEach(q=>{ all.push(q); q.answers.forEach(a=>all.push(a)); });
+    const x = all.find(v=>v.id===ed.id), text = (ed.text||'').trim();
+    if(!text && !(x&&x.file)){ qnaErr='내용을 입력해 주세요.'; return renderQna(); }
+    return qnaRun(async()=>{ await qnaCall({action: ed.kind==='q'?'editQuestion':'editAnswer', id:ed.id, token:qnaTokens()[ed.id]||'', text}); qnaEdit=null; });
+  }
+  if(act==='del'){
+    if(qnaConfirm!==id){ qnaConfirm=id; return renderQna(); }
+    qnaConfirm=null;
+    return qnaRun(async()=>{ await qnaCall({action: kind==='q'?'deleteQuestion':'deleteAnswer', id}); });
+  }
+  if(act==='submit') return qnaSubmit(b.closest('.qna-form'));
+}
+async function qnaSubmit(form){
+  const key = form.dataset.key;
   const name = form.querySelector('.qna-name').value.trim();
   const text = form.querySelector('.qna-text').value.trim();
   const file = qnaFiles[key]||null;
   const phEl = form.querySelector('.qna-phone');
   const phone = phEl ? fmtPhone(phEl.value.trim()) : '';
-  if(phEl && phone.replace(/\D/g,'').length < 9){ qnaErr='전화번호를 정확히 입력해 주세요.'; renderQna(); return; }
-  if(!name){ qnaErr='성명을 입력해 주세요.'; renderQna(); return; }
-  if(!text && !file){ qnaErr='내용을 입력하거나 이미지·자료를 첨부해 주세요.'; renderQna(); return; }
-  qnaBusy = true; const btn = form.querySelector('.qna-submit'); btn.disabled = true; btn.textContent='등록 중…';
-  try{
-    saveName(name); if(phEl){ try{ localStorage.setItem('jee62-qna-phone',phone); }catch(e){} }
-    await qnaAdd(key==='ask'?'ask':'answer', key, name, text, file, phone);
-    delete qnaDrafts[key]; delete qnaFiles[key]; qnaAnswerOpen.delete(key); qnaErr='';
-    qnaItems = await qnaFetchAll();
-  }catch(err){ qnaErr = '등록 실패: '+err.message; }
-  qnaBusy = false; renderQna();
+  if(!name){ qnaErr='성명을 입력해 주세요.'; return renderQna(); }
+  if(phEl && phone.replace(/\D/g,'').length < 9){ qnaErr='전화번호를 정확히 입력해 주세요.'; return renderQna(); }
+  if(!text && !file){ qnaErr='내용을 입력하거나 이미지·자료를 첨부해 주세요.'; return renderQna(); }
+  const btn = form.querySelector('.qna-submit'); btn.disabled = true; btn.textContent='등록 중…';
+  lsSet(QNA_NAME_KEY, name); if(phEl) lsSet(QNA_PHONE_KEY, phone);
+  return qnaRun(async()=>{
+    const body = {action: key==='ask'?'addQuestion':'addAnswer', qid:key, name, phone, text,
+      file: file?{name:file.name,mime:file.mime,data:file.dataUrl.split(',')[1]}:null};
+    const r = await qnaCall(body);
+    qnaSaveToken(r.id, r.token);
+    delete qnaDrafts[key]; delete qnaFiles[key];
+    if(key!=='ask'){ qnaFormOpen.delete(key); qnaAnsOpen.add(key); }
+  });
 }
 async function initQna(){
   renderQna();
   if(qnaLoaded || qnaLoading) return;
   qnaLoading = true;
-  try{ qnaItems = await qnaFetchAll(); qnaErr=''; }catch(err){ qnaErr = '불러오기 실패: '+err.message; }
+  try{ await qnaReload(); qnaErr = qnaErr; }catch(err){ qnaErr = '불러오기 실패: '+err.message; }
   qnaLoading = false; qnaLoaded = true; renderQna();
 }
 
