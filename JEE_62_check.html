@@ -1278,7 +1278,6 @@ function bodyHtml(section){
   if(section.type==='speech'){
     let html = `<iframe class="sp-frame" src="${section.url}" title="전문 구두 점검" allow="microphone; autoplay" loading="lazy"></iframe>`;
     html += `<details class="sp-guide"><summary>📥 오디오부분에서 오디오 내 ⋮(점3)를 누르면 오디오 파일을 다운받을 수 있습니다.</summary><img src="${SP_GUIDE_IMG}" alt="오디오 다운로드 방법: 플레이어 오른쪽 ⋮ 메뉴 → 오디오 다운로드"></details>`;
-    html += `<a class="sp-open" href="${section.url}" target="_blank" rel="noopener">↗ 새 탭에서 크게 열기</a>`;
     return html;
   }
   if(section.type==='faq'){
