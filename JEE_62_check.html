@@ -156,7 +156,7 @@
     -webkit-font-smoothing:antialiased;
   }
   .app{
-    max-width:480px;
+    max-width:none; width:100%;
     margin:0 auto;
     min-height:100vh;
     display:flex;
@@ -385,7 +385,7 @@
 
   /* ---------- Tablet layout ---------- */
   @media (min-width:700px){
-    .app{ max-width:680px; }
+    .app{ max-width:none; }
     header{ padding:30px 34px 18px; }
     main{ padding:10px 34px 70px; }
     h1{ font-size:calc(30px * var(--font-scale)); }
