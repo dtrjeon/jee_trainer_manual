@@ -403,6 +403,12 @@
   }
 
   @media (pointer:coarse){ .app, .app{ max-width:none !important; } }
+  .sp-row{ margin:10px 0 14px; }
+  .sp-title{ display:flex; align-items:center; justify-content:space-between; gap:8px; font-size:calc(14px * var(--font-scale)); margin-bottom:6px; }
+  .sp-title b{ color:var(--clay); margin-right:6px; }
+  .sp-dl{ border:1px solid var(--paper-line); background:var(--box-bg); color:var(--ink); border-radius:10px; min-width:42px; height:34px; font-size:16px; cursor:pointer; margin-left:auto; }
+  .sp-row audio{ width:100%; height:38px; }
+  .sp-open{ display:block; text-align:center; margin:16px 0 4px; padding:12px; border:1px solid var(--paper-line); border-radius:12px; background:var(--box-bg); color:var(--clay); font-weight:700; text-decoration:none; font-size:calc(14px * var(--font-scale)); }
   .form-ref{ margin:16px 0; }
   .form-ref img{
     width:100%; display:block; border-radius:10px; border:1px solid var(--paper-line);
@@ -563,6 +569,7 @@ const IMG_REVISIT2 = "data:image/jpeg;base64,/9j/4QC8RXhpZgAASUkqAAgAAAAGABIBAwA
 const IMAGES = { ICON1, IMG_REPORT, IMG_QNA, IMG_QNA2, IMG_REVISIT, IMG_REVISIT2 };
 
 /* ---------------- Content data ---------------- */
+const SPEECH_BASE = 'https://dtrjeon.github.io/speech_check/audio/';
 const SECTIONS = [
 {
   id:1, page:'2p', title:'훈련자 유의사항', type:'checklist',
@@ -779,7 +786,18 @@ const SECTIONS = [
   faq:[["대상자가 진단질문에 모호하거나 틀리게 대답하면 어떻게 하나요?", "경솔하게 판단해 기분 상하지 않도록 유의합니다. “하나님의 자녀라서요”, “믿음으로 가요”처럼 답해도 “구원의 확신이 없으시군요” 같이 신앙을 판단하는 표현은 삼갑니다. (1. 훈련자 유의사항)"], ["복음제시를 전문대로 전하지 못했다면?", "부득이 전문대로 전하지 못했다면, 복음제시를 마친 후 훈련생에게 반드시 그 이유를 설명해 줍니다. 평소에는 복음전문 그대로 전하는 모범을 보입니다. (1. 훈련자 유의사항)"], ["훈련자의 가장 중요한 역할은 무엇인가요?", "① 훈련생 숙제 점검 ② 현장실습 리더 ③ 공개보고회 준비 ④ 훈련생 파일 점검 및 정리, 크게 네 가지입니다. 훈련자는 곧 훈련생의 영적 부모로서 본이 되어야 합니다. (2. 훈련자 역할)"], ["훈련생 파일은 무엇을 점검하나요?", "전폭사역 평가표(교재 P.107, 12~13주차), 기도후원자 카드 2매(2~3주차), 전도대상자 카드(2~3주차), 개인간증문·모집간증문을 점검한 뒤 그룹장과 공유합니다. (2. 훈련자 역할)"], ["대상자가 부재중이거나 난처해하면?", "문자(SNS)로 재방문을 약속하되 저녁 9시 이전을 권장합니다. 또는 공공장소 질문지 전도를 하거나 팀 내 복음제시 연습을 합니다. (2. 훈련자 역할)"], ["이미 확신 있는 그리스도인을 만났을 때는?", "상황에 맞게 세 가지 중 선택합니다. ① 감사 인사 후 이동 ② 교회가 믿는 바 소개 ③ 상대의 간증을 듣고 나의 간증 나누기. (2. 훈련자 역할)"], ["현관문 앞에서는 어떻게 하나요?", "여자팀원이 위협적이지 않게 잘 보이는 곳에 서고 “좋은 소식을 가지고 왔다”고 안내합니다. “곤란하다”고 하시면 이유는 묻지 말고 다음 방문 일정만 약속합니다. (3. 현장 실습 유의사항)"], ["현장실습을 마치고 돌아오면서 무엇을 하나요?", "긍정적인 면부터 평가 → 더 잘할 수 있는 점을 세워주는 마음으로 이야기 → 오늘 배운 것 확인 → 공개보고회 자료 기록 및 대상자를 위해 기도합니다. (3. 현장 실습 유의사항)"], ["공개보고에서 접촉과 복음제시는 어떻게 구분하나요?", "접촉은 서론의 진단질문 1, 2를 제시한 것부터이며 인사를 나눈 것도 포함합니다(59기 추가). 복음제시는 서론 대화와 복음 설명을 하고 확인질문(“이해가 되십니까?”)까지 제시한 경우입니다. (4. 공개 보고)"], ["공개보고는 어떻게 하나요?", "순서에 따라 2분 이내로 간략히 하고, 보고자는 항상 중앙에 위치합니다. 대상자 이름은 거명하지 않고 성씨만 사용하며(예: “김씨 성을 가진 남성분”), 중보기도가 필요한 기도제목을 꼭 확인해 보고합니다. (4. 공개 보고)"], ["결신율은 어떻게 계산하나요?", "결신율(%) = 결신 ÷ ( 복음제시 − (이미신자 + 확신부족신자) ) × 100 (4. 공개 보고)"], ["7일후 재방문은 보고서에 어떻게 작성하나요?", "1~4번까지만 표기하고 5번·7번은 미표기합니다. 6번 결과는 확신 또는 이미신자로 표기하고, 8번에는 현장실습 느낀점을 적습니다. 7일후 재방문은 결신자 대상이며 이미신자는 재방문 대상이 아닙니다. (4. 공개 보고)"], ["진단 결과(결신·확신·보류/거부·이미신자·머리신자)는 어떻게 구분하나요?", "결신: 복음제시 후 예수님을 구주로 영접. 확신: 천국 확신이 없다고 했으나 믿음을 고백(구원간증을 반드시 들어봄). 보류/거부: 복음을 듣고 영생의 선물 받기를 연기 또는 거부. 이미신자: 구원 확신 말씀/간증이 있음. 머리신자: 구원 말씀/간증이 없음. 1개만 선택합니다. (5. 공개 보고서 작성 요령)"], ["이유질문 답변이 “불확실”(행위와 믿음 중복 등)이면?", "양식에는 [불확실/행위/모름/대답안함]만 표기되어 있으므로, 수기로 “불확실” 용어를 추가 표기합니다. (5. 공개 보고서 작성 요령)"], ["7일 후 재방문 때 새신자에게 안내할 신앙생활 다섯 가지는?", "① 성경 읽기 ② 기도 ③ 예배 참석 ④ 교제 ⑤ 전도입니다. 성경은 하루 한 장씩, 기도는 다섯 손가락 기도, 예배·목장모임 참석을 구체적으로 약속하고 함께 기도합니다. (6. 칠일 후 재방문 시범)"], ["결신기도 직후 확신질문은 어떻게 하나요?", "요한복음 6:47을 대상자가 직접 읽게 하고 “너희에게는 누구?”, “믿는 자는?”, “무엇을 가졌다고?”로 스스로 답하게 합니다. 이어 “나는 천국에 갈 확신이 있습니다”를 따라 말하게 하고, 요한복음 1:12도 같은 요령으로 읽게 합니다. (7. 확신질문 방법)"], ["“하나님의 자녀가 된 것이 느껴지지 않는다”고 하면?", "대부분 못 느낀다고 답하는데 정상입니다. 육신으로 태어날 때 그 순간을 못 느꼈던 것과 같음을 짚어주고, “함께 성장해요” 책을 선물하며 즉석 양육을 마무리합니다. (7. 확신질문 방법)"], ["조별 나눔 QQ(퀘이커 질문)는 어떻게 진행하나요?", "조원 중 1명이 자신의 삶에 대해 QQ 5가지 질문을 나누면 그분을 위해 기도하고 다음 사람으로 넘어갑니다. 맞고 틀린 답이 아니라 하나님 앞에서 현재 상태를 솔직히 돌아보는 질문이며, 편하게 느낀 만큼만 나누면 됩니다. (8. 조별 나눔시 QQ)"]]
 },
 {
-  id:10, page:'', title:'전문 구두 점검', type:'link', url:'https://dtrjeon.github.io/speech_check/index-audio.html', desc:'복음제시 전문 암송 연습 · 음성 점검'
+  id:10, page:'', title:'전문 구두 점검', type:'speech', url:'https://dtrjeon.github.io/speech_check/index-audio.html', desc:'전문 오디오 듣기·다운로드 · 구두 점검',
+  audios:[
+    {n:'1장', t:'서론(아니요)', f:'전문_12_서론(아니오).m4a'},
+    {n:'2장', t:'은혜', f:'전문_21_은혜.m4a'},
+    {n:'3장', t:'인간', f:'전문_22_인간.m4a'},
+    {n:'4장', t:'하나님', f:'전문_23_하나님.m4a'},
+    {n:'5장', t:'그리스도', f:'전문_24_예수그리스도.m4a'},
+    {n:'6장', t:'믿음', f:'전문_25_믿음.m4a'},
+    {n:'7장', t:'결신', f:'전문_30_결신.m4a'},
+    {n:'8장', t:'즉석양육', f:'전문_40_즉석양육.m4a'},
+    {n:'10장', t:'요약 복음', f:'ch10_summary.m4a'}
+  ]
 }
 ];
 
@@ -1200,7 +1218,7 @@ function renderPath(){
     const btn = document.createElement('button');
     btn.className = 'path-step' + (s.id===openSection?' active':'') + (done?' done':'');
     btn.innerHTML = `<div class="path-dot"></div><div class="path-label">${s.id}</div>`;
-    btn.onclick = ()=>{ if(s.type==='link'){ window.open(s.url,'_blank','noopener'); return; } openSection = s.id; render(); document.getElementById('sec-'+s.id).scrollIntoView({behavior:'smooth', block:'start'}); };
+    btn.onclick = ()=>{ openSection = s.id; render(); document.getElementById('sec-'+s.id).scrollIntoView({behavior:'smooth', block:'start'}); };
     wrap.appendChild(btn);
     if(idx < SECTIONS.length-1){
       const line = document.createElement('div');
@@ -1254,6 +1272,15 @@ function bodyHtml(section){
       });
       html += `</div>`;
     });
+    return html;
+  }
+  if(section.type==='speech'){
+    let html = `<p class="intro-text">전문(복음제시) 오디오입니다. ▶로 듣고, ⬇를 누르면 파일이 저장됩니다.</p>`;
+    section.audios.forEach((a,i)=>{
+      const src = SPEECH_BASE + encodeURIComponent(a.f);
+      html += `<div class="sp-row"><div class="sp-title"><b>${a.n}</b> ${a.t}<button class="sp-dl" data-sp-dl="${i}" title="오디오 다운로드" aria-label="${a.n} ${a.t} 다운로드">⬇</button></div><audio controls preload="none" src="${src}"></audio></div>`;
+    });
+    html += `<a class="sp-open" href="${section.url}" target="_blank" rel="noopener">🎙 구두 점검 앱 열기 (녹음·STT 점검)</a>`;
     return html;
   }
   if(section.type==='faq'){
@@ -1384,7 +1411,7 @@ function render(){
         <div class="badge">${s.id}</div>
         <div class="head-text">
           <div class="head-title">${s.title}</div>
-          <div class="head-meta">${s.type==='faq'?`자주 묻는 질문 ${s.faq.length}개`:s.type==='link'?s.desc:`교재 ${s.page}`}${prog? ` · ${prog.done}/${prog.total} 체크완료`:''}</div>
+          <div class="head-meta">${s.type==='faq'?`자주 묻는 질문 ${s.faq.length}개`:s.type==='speech'?s.desc:`교재 ${s.page}`}${prog? ` · ${prog.done}/${prog.total} 체크완료`:''}</div>
         </div>
         <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"></polyline></svg>
       </button>
@@ -1395,10 +1422,24 @@ function render(){
   main.querySelectorAll('[data-toggle]').forEach(btn=>{
     btn.addEventListener('click', ()=>{
       const id = parseInt(btn.dataset.toggle,10);
-      const _s = SECTIONS.find(x=>x.id===id);
-      if(_s && _s.type==='link'){ window.open(_s.url,'_blank','noopener'); return; }
       openSection = (openSection===id) ? null : id;
       render();
+    });
+  });
+  main.querySelectorAll('[data-sp-dl]').forEach(btn=>{
+    btn.addEventListener('click', async (e)=>{
+      e.stopPropagation();
+      const sec = SECTIONS.find(x=>x.type==='speech'); const a = sec.audios[+btn.dataset.spDl];
+      const url = SPEECH_BASE + encodeURIComponent(a.f);
+      const name = `전문_${a.n}_${a.t}.m4a`;
+      const old = btn.textContent; btn.textContent = '…'; btn.disabled = true;
+      try{
+        const r = await fetch(url); if(!r.ok) throw new Error(r.status);
+        const u = URL.createObjectURL(await r.blob());
+        const l = document.createElement('a'); l.href=u; l.download=name; document.body.appendChild(l); l.click(); l.remove();
+        setTimeout(()=>URL.revokeObjectURL(u), 4000);
+      }catch(err){ window.open(url,'_blank','noopener'); }
+      btn.textContent = old; btn.disabled = false;
     });
   });
   main.querySelectorAll('.check').forEach(el=>{
