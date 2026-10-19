@@ -403,11 +403,28 @@
   }
 
   @media (pointer:coarse){ .app, .app{ max-width:none !important; } }
-  .sp-row{ margin:10px 0 14px; }
-  .sp-title{ display:flex; align-items:center; justify-content:space-between; gap:8px; font-size:calc(14px * var(--font-scale)); margin-bottom:6px; }
-  .sp-title b{ color:var(--clay); margin-right:6px; }
-  .sp-dl{ border:1px solid var(--paper-line); background:var(--box-bg); color:var(--ink); border-radius:10px; min-width:42px; height:34px; font-size:16px; cursor:pointer; margin-left:auto; }
-  .sp-row audio{ width:100%; height:38px; }
+  .sp-chips{ display:grid; grid-template-columns:repeat(3,1fr); gap:8px; margin:12px 0; }
+  .sp-chip{ border:1px solid var(--paper-line); background:var(--box-bg); color:var(--ink); border-radius:12px; padding:8px 6px; font-size:calc(13.5px * var(--font-scale)); cursor:pointer; text-align:left; line-height:1.3; }
+  .sp-chip small{ display:block; font-size:calc(10.5px * var(--font-scale)); color:var(--ink-soft); }
+  .sp-chip.active{ border-color:var(--clay); background:rgba(91,79,207,.10); font-weight:700; }
+  .sp-player{ position:relative; border:1px solid var(--paper-line); background:var(--box-bg); border-radius:14px; padding:12px; margin:8px 0 4px; }
+  .sp-now{ font-size:calc(14px * var(--font-scale)); margin-bottom:8px; }
+  .sp-now b{ color:var(--clay); }
+  .sp-ctrl{ display:flex; align-items:center; gap:8px; }
+  .sp-play{ flex:none; width:42px; height:42px; border-radius:50%; border:2px solid var(--clay); background:transparent; color:var(--clay); font-size:16px; cursor:pointer; }
+  .sp-cur,.sp-dur{ flex:none; font-size:12px; color:var(--ink-soft); font-variant-numeric:tabular-nums; }
+  .sp-seek{ flex:1; min-width:0; accent-color:var(--clay); }
+  .sp-more{ flex:none; width:34px; height:34px; border:1px solid var(--paper-line); border-radius:10px; background:transparent; color:var(--ink); font-size:18px; cursor:pointer; }
+  .sp-pop{ margin-top:10px; padding:12px; border:1px solid var(--paper-line); border-radius:12px; background:var(--paper,#fff); box-shadow:0 6px 18px rgba(0,0,0,.12); }
+  .sp-pop[hidden]{ display:none; }
+  .sp-pop-label{ font-size:calc(13px * var(--font-scale)); color:var(--ink-soft); margin:6px 0; }
+  .sp-pop-label b{ color:var(--clay); float:right; }
+  .sp-gain-row{ display:flex; align-items:center; gap:8px; font-size:12px; color:var(--ink-soft); }
+  .sp-gain{ flex:1; accent-color:var(--clay); }
+  .sp-speed-row{ display:flex; gap:8px; }
+  .sp-speed{ flex:1; padding:8px 0; border:1px solid var(--paper-line); background:var(--box-bg); border-radius:10px; color:var(--ink); cursor:pointer; }
+  .sp-speed.active{ border-color:var(--clay); background:rgba(91,79,207,.10); font-weight:700; }
+  .sp-dl-btn{ width:100%; margin-top:12px; padding:11px; border:1px solid var(--paper-line); background:var(--box-bg); border-radius:10px; color:var(--ink); font-weight:700; cursor:pointer; }
   .sp-open{ display:block; text-align:center; margin:16px 0 4px; padding:12px; border:1px solid var(--paper-line); border-radius:12px; background:var(--box-bg); color:var(--clay); font-weight:700; text-decoration:none; font-size:calc(14px * var(--font-scale)); }
   .form-ref{ margin:16px 0; }
   .form-ref img{
@@ -1275,11 +1292,26 @@ function bodyHtml(section){
     return html;
   }
   if(section.type==='speech'){
-    let html = `<p class="intro-text">전문(복음제시) 오디오입니다. ▶로 듣고, ⬇를 누르면 파일이 저장됩니다.</p>`;
-    section.audios.forEach((a,i)=>{
-      const src = SPEECH_BASE + encodeURIComponent(a.f);
-      html += `<div class="sp-row"><div class="sp-title"><b>${a.n}</b> ${a.t}<button class="sp-dl" data-sp-dl="${i}" title="오디오 다운로드" aria-label="${a.n} ${a.t} 다운로드">⬇</button></div><audio controls preload="none" src="${src}"></audio></div>`;
-    });
+    const cur = section.audios[SP.idx];
+    let html = `<p class="intro-text">전문(복음제시) 오디오입니다. 장을 고르고 ▶로 듣습니다. ⋮ 메뉴에서 볼륨 증폭·속도·오디오 다운로드를 할 수 있습니다.</p>`;
+    html += `<div class="sp-chips">` + section.audios.map((a,k)=>`<button class="sp-chip ${k===SP.idx?'active':''}" data-sp-ch="${k}"><small>${a.n}</small>${a.t}</button>`).join('') + `</div>`;
+    html += `<div class="sp-player">
+      <div class="sp-now">🎧 <b>${cur.n}</b> ${cur.t}</div>
+      <div class="sp-ctrl">
+        <button class="sp-play" data-sp="play" aria-label="재생/일시정지">▶</button>
+        <span class="sp-cur">0:00</span>
+        <input class="sp-seek" type="range" min="0" max="1000" value="0" aria-label="재생 위치">
+        <span class="sp-dur">0:00</span>
+        <button class="sp-more" data-sp="more" aria-label="더보기">⋮</button>
+      </div>
+      <div class="sp-pop" hidden>
+        <div class="sp-pop-label">🔊 볼륨 증폭 <b class="sp-gain-val">×${SP.gain}</b></div>
+        <div class="sp-gain-row"><span>×1</span><input class="sp-gain" type="range" min="1" max="5" step="0.5" value="${SP.gain}"><span>×5</span></div>
+        <div class="sp-pop-label">⏩ 속도</div>
+        <div class="sp-speed-row">${[0.8,1,1.2,1.5].map(v=>`<button class="sp-speed ${v===SP.speed?'active':''}" data-sp-speed="${v}">${v}×</button>`).join('')}</div>
+        <button class="sp-dl-btn" data-sp="dl">⬇ 오디오 다운로드</button>
+      </div>
+    </div>`;
     html += `<a class="sp-open" href="${section.url}" target="_blank" rel="noopener">🎙 구두 점검 앱 열기 (녹음·STT 점검)</a>`;
     return html;
   }
@@ -1398,6 +1430,92 @@ function chapterBar(){
     <button class="cb-expand" data-act="focus" title="${focusMode?'닫기':'크게 보기'}">${focusMode?ICON_SHRINK:ICON_EXPAND}</button>
   </div>`;
 }
+/* ---------------- 10. 전문 구두 점검: 오디오 플레이어 ---------------- */
+const SP = { idx:0, gain:1, speed:1, audio:null, ctx:null, gainNode:null };
+try{ const g=parseFloat(localStorage.getItem('jee-sp-gain')); if(g>=1&&g<=5) SP.gain=g; const v=parseFloat(localStorage.getItem('jee-sp-speed')); if([0.8,1,1.2,1.5].includes(v)) SP.speed=v; }catch(e){}
+function spSec(){ return SECTIONS.find(x=>x.type==='speech'); }
+function spUrl(k){ return SPEECH_BASE + encodeURIComponent(spSec().audios[k].f); }
+function spFmt(t){ if(!isFinite(t)) return '0:00'; t=Math.floor(t); return Math.floor(t/60)+':'+String(t%60).padStart(2,'0'); }
+function spAudio(){
+  if(!SP.audio){
+    const a = new Audio(); a.preload='none'; a.crossOrigin='anonymous';
+    ['timeupdate','loadedmetadata','durationchange','play','pause','ended'].forEach(ev=>a.addEventListener(ev, spUI));
+    SP.audio = a; a.playbackRate = SP.speed;
+  }
+  return SP.audio;
+}
+function spUI(){
+  const root = document.getElementById('sec-10'); if(!root) return;
+  const a = SP.audio; if(!a) return;
+  const set=(sel,fn)=>{ const el=root.querySelector(sel); if(el) fn(el); };
+  set('.sp-play', el=>{ el.textContent = a.paused ? '▶' : '⏸'; });
+  set('.sp-cur', el=>{ el.textContent = spFmt(a.currentTime); });
+  set('.sp-dur', el=>{ el.textContent = spFmt(a.duration); });
+  set('.sp-seek', el=>{ if(!SP.seeking && a.duration) el.value = Math.round(a.currentTime/a.duration*1000); });
+}
+function spLoad(k, play){
+  const a = spAudio(); SP.idx = k;
+  a.src = spUrl(k); a.playbackRate = SP.speed;
+  if(play) spPlay();
+}
+function spEnsureGain(){
+  if(SP.gainNode || !SP.audio) return;
+  try{
+    const C = window.AudioContext || window.webkitAudioContext;
+    SP.ctx = new C();
+    const src = SP.ctx.createMediaElementSource(SP.audio);
+    SP.gainNode = SP.ctx.createGain(); SP.gainNode.gain.value = SP.gain;
+    src.connect(SP.gainNode); SP.gainNode.connect(SP.ctx.destination);
+  }catch(e){ SP.gainNode = null; }
+}
+function spPlay(){
+  const a = spAudio();
+  if(!a.src) a.src = spUrl(SP.idx);
+  if(SP.gain>1) spEnsureGain();
+  if(SP.ctx && SP.ctx.state==='suspended') SP.ctx.resume();
+  a.playbackRate = SP.speed;
+  a.play().catch(()=>{});
+}
+async function spDownload(){
+  const a = spSec().audios[SP.idx]; const url = spUrl(SP.idx);
+  const name = `전문_${a.n}_${a.t}.m4a`;
+  const btn = document.querySelector('#sec-10 .sp-dl-btn'); const old = btn ? btn.textContent : '';
+  if(btn){ btn.textContent='다운로드 중…'; btn.disabled=true; }
+  try{
+    const r = await fetch(url); if(!r.ok) throw new Error(r.status);
+    const u = URL.createObjectURL(await r.blob());
+    const l = document.createElement('a'); l.href=u; l.download=name; document.body.appendChild(l); l.click(); l.remove();
+    setTimeout(()=>URL.revokeObjectURL(u), 4000);
+  }catch(err){ window.open(url,'_blank','noopener'); }
+  if(btn){ btn.textContent=old; btn.disabled=false; }
+}
+function spBind(main){
+  const root = main.querySelector('#sec-10'); if(!root || !root.querySelector('.sp-player')) return;
+  root.querySelectorAll('[data-sp-ch]').forEach(b=>b.addEventListener('click', ()=>{
+    const k=+b.dataset.spCh; const wasPlaying = SP.audio && !SP.audio.paused;
+    spLoad(k, wasPlaying); render();
+    setTimeout(spUI, 0);
+  }));
+  root.querySelector('[data-sp="play"]').addEventListener('click', ()=>{ const a=spAudio(); if(!a.src || a.paused) spPlay(); else a.pause(); });
+  const pop = root.querySelector('.sp-pop');
+  root.querySelector('[data-sp="more"]').addEventListener('click', ()=>{ pop.hidden = !pop.hidden; });
+  root.querySelector('[data-sp="dl"]').addEventListener('click', spDownload);
+  const seek = root.querySelector('.sp-seek');
+  seek.addEventListener('input', ()=>{ SP.seeking = true; const a=spAudio(); if(a.duration) root.querySelector('.sp-cur').textContent = spFmt(seek.value/1000*a.duration); });
+  seek.addEventListener('change', ()=>{ const a=spAudio(); if(a.duration) a.currentTime = seek.value/1000*a.duration; SP.seeking=false; });
+  const g = root.querySelector('.sp-gain');
+  g.addEventListener('input', ()=>{
+    SP.gain = parseFloat(g.value); root.querySelector('.sp-gain-val').textContent = '×'+SP.gain;
+    if(SP.gain>1) spEnsureGain(); if(SP.gainNode) SP.gainNode.gain.value = SP.gain;
+    try{ localStorage.setItem('jee-sp-gain', SP.gain); }catch(e){}
+  });
+  root.querySelectorAll('[data-sp-speed]').forEach(b=>b.addEventListener('click', ()=>{
+    SP.speed = parseFloat(b.dataset.spSpeed); if(SP.audio) SP.audio.playbackRate = SP.speed;
+    root.querySelectorAll('[data-sp-speed]').forEach(x=>x.classList.toggle('active', x===b));
+    try{ localStorage.setItem('jee-sp-speed', SP.speed); }catch(e){}
+  }));
+  spUI();
+}
 function render(){
   renderPath();
   renderSummary();
@@ -1426,22 +1544,7 @@ function render(){
       render();
     });
   });
-  main.querySelectorAll('[data-sp-dl]').forEach(btn=>{
-    btn.addEventListener('click', async (e)=>{
-      e.stopPropagation();
-      const sec = SECTIONS.find(x=>x.type==='speech'); const a = sec.audios[+btn.dataset.spDl];
-      const url = SPEECH_BASE + encodeURIComponent(a.f);
-      const name = `전문_${a.n}_${a.t}.m4a`;
-      const old = btn.textContent; btn.textContent = '…'; btn.disabled = true;
-      try{
-        const r = await fetch(url); if(!r.ok) throw new Error(r.status);
-        const u = URL.createObjectURL(await r.blob());
-        const l = document.createElement('a'); l.href=u; l.download=name; document.body.appendChild(l); l.click(); l.remove();
-        setTimeout(()=>URL.revokeObjectURL(u), 4000);
-      }catch(err){ window.open(url,'_blank','noopener'); }
-      btn.textContent = old; btn.disabled = false;
-    });
-  });
+  spBind(main);
   main.querySelectorAll('.check').forEach(el=>{
     el.addEventListener('click', (e)=>{
       e.stopPropagation();
